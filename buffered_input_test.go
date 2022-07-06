@@ -35,26 +35,26 @@ func TestChunkSize(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 
-	done := make(chan bool)
+	done := make(chan time.Time)
 
 	options := NewOptions()
-	options.Timeout = time.Second
+	options.Timeout = time.Second * 2
 	options.Handler = func(chunk []interface{}) {
 		if len(chunk) == 1 {
-			done <- true
+			done <- chunk[0].(time.Time)
 			return
 		}
 
-		done <- false
+		done <- time.Now()
 	}
 
 	bi := NewBufferedInput(options)
 	defer bi.Close()
 
-	bi.Push(true)
+	bi.Push(time.Now())
 
-	success := <-done
-	if !success {
+	mt := <-done
+	if !mt.Add(time.Second * 2).Before(time.Now()) {
 		t.Fail()
 	}
 }
