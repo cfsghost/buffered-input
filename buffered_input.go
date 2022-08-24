@@ -27,14 +27,21 @@ func NewBufferedInput(options *Options) *BufferedInput {
 }
 
 func (bi *BufferedInput) start() {
+
+	timeout := time.NewTimer(bi.options.Timeout)
+	defer timeout.Stop()
+
 	for {
+
+		timeout.Reset(bi.options.Timeout)
+
 		select {
 		case <-bi.closed:
 			close(bi.closed)
 			return
 		case data := <-bi.output:
 			bi.options.Handler(data)
-		case <-time.After(bi.options.Timeout):
+		case <-timeout.C:
 			bi.Flush()
 		}
 	}
